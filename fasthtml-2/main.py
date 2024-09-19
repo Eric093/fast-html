@@ -2,9 +2,11 @@ from fasthtml.common import *
 
 def render(todo):
     tid = f'todo-{todo.id}'
-    toggle =A('Toggle', hx_get=f'/toggle/{todo.id}', target_id=tid)
-    return Li(toggle, 
-              Str(todo.title) + (" []"  if todo.done else ""),
+    toggle =A('Toggle - ', hx_get=f'/toggle/{todo.id}', target_id=tid)
+    delete =A('Delete - ', hx_delete=f'/{todo.id}',
+              hx_swap='outerHTML', target_id=tid)
+    return Li(toggle, delete,
+              Str(todo.title) + (" [👆]"  if todo.done else "❌"),
                id=tid)
 
 app,rt,todos,Todo = fast_app('todo.db', live=True, render=render,
@@ -20,17 +22,24 @@ app,rt,todos,Todo = fast_app('todo.db', live=True, render=render,
 def get(): 
     # todos.insert(Todo(title='Un Todo', done=False))
     # items = [Li(o) for o in todos()]
+    frm = Form(Group(Input(), Button('Add')), hx_post='/')
+
     return Titled('Todos',
-                  # Div(nums, id='stuff', hx_get="/change"),
-                  Ul(*todos()),
-                                      )
+                  Card(
+                    Ul(*todos(), id='todo-list'),
+                    header=frm)
+                    )
+
+@rt('/{tid}')
+def delete(tid:int): todos.delete(tid)
+    
 
 @rt('/toggle/{tid}')
 def get(tid:int):
     todo = todos[tid]
     todo.done = not todo.done
-    todos.update(todo)
-    return todo
+    return todos.update(todo)
+    
 
 # @rt('/change')
 # def get(): 
